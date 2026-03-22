@@ -53,6 +53,9 @@ export default function HumorFlavorsPage() {
     const mapped: FlavorWithCount[] = (data ?? []).map((f) => ({
       id: f.id,
       created_datetime_utc: f.created_datetime_utc,
+      modified_datetime_utc: f.modified_datetime_utc,
+      created_by_user_id: f.created_by_user_id,
+      modified_by_user_id: f.modified_by_user_id,
       description: f.description,
       slug: f.slug,
       step_count: (f.humor_flavor_steps as { count: number }[])?.[0]?.count ?? 0,
