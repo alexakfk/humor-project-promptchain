@@ -66,6 +66,7 @@ export default function HumorFlavorDetailPage({
   const [editSlug, setEditSlug] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
+  const [userId, setUserId] = useState<string | null>(null);
   const [testFile, setTestFile] = useState<File | null>(null);
   const [testExistingImageId, setTestExistingImageId] = useState<string>("");
   const [testResults, setTestResults] = useState<Caption[]>([]);
@@ -132,11 +133,18 @@ export default function HumorFlavorDetailPage({
 
   useEffect(() => {
     async function init() {
-      await Promise.all([fetchFlavor(), fetchSteps(), fetchLookups(), fetchCaptions()]);
+      const [, , , , { data: { user } }] = await Promise.all([
+        fetchFlavor(),
+        fetchSteps(),
+        fetchLookups(),
+        fetchCaptions(),
+        supabase.auth.getUser(),
+      ]);
+      if (user) setUserId(user.id);
       setLoading(false);
     }
     init();
-  }, [fetchFlavor, fetchSteps, fetchLookups, fetchCaptions]);
+  }, [fetchFlavor, fetchSteps, fetchLookups, fetchCaptions, supabase]);
 
   async function handleSaveFlavor(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +155,7 @@ export default function HumorFlavorDetailPage({
       .update({
         slug: editSlug.trim(),
         description: editDescription.trim() || null,
+        modified_by_user_id: userId!,
       })
       .eq("id", Number(id));
 
@@ -325,6 +334,7 @@ export default function HumorFlavorDetailPage({
             inputTypes={inputTypes}
             outputTypes={outputTypes}
             onRefresh={fetchSteps}
+            userId={userId!}
           />
         </TabsContent>
 

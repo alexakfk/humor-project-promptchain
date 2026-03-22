@@ -1,7 +1,9 @@
 export interface Profile {
   id: string;
   created_datetime_utc: string;
-  modified_datetime_utc: string | null;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   first_name: string | null;
   last_name: string | null;
   email: string | null;
@@ -13,6 +15,9 @@ export interface Profile {
 export interface HumorFlavor {
   id: number;
   created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   description: string | null;
   slug: string;
 }
@@ -20,6 +25,9 @@ export interface HumorFlavor {
 export interface HumorFlavorStep {
   id: number;
   created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   humor_flavor_id: number;
   llm_temperature: number | null;
   order_by: number;
@@ -35,6 +43,10 @@ export interface HumorFlavorStep {
 export interface HumorFlavorStepType {
   id: number;
   created_at: string;
+  created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   slug: string;
   description: string;
 }
@@ -42,12 +54,18 @@ export interface HumorFlavorStepType {
 export interface LlmProvider {
   id: number;
   created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   name: string;
 }
 
 export interface LlmModel {
   id: number;
   created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   name: string;
   llm_provider_id: number;
   provider_model_id: string;
@@ -58,6 +76,9 @@ export interface LlmModel {
 export interface LlmInputType {
   id: number;
   created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   description: string;
   slug: string;
 }
@@ -65,6 +86,9 @@ export interface LlmInputType {
 export interface LlmOutputType {
   id: number;
   created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   description: string;
   slug: string;
 }
@@ -72,7 +96,9 @@ export interface LlmOutputType {
 export interface Caption {
   id: string;
   created_datetime_utc: string;
-  modified_datetime_utc: string | null;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   content: string | null;
   is_public: boolean;
   profile_id: string;
@@ -88,7 +114,9 @@ export interface Caption {
 export interface Image {
   id: string;
   created_datetime_utc: string;
-  modified_datetime_utc: string | null;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   url: string | null;
   is_common_use: boolean;
   profile_id: string | null;
@@ -101,6 +129,8 @@ export interface StudyImageSet {
   id: number;
   created_datetime_utc: string;
   modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   slug: string;
   description: string | null;
 }
@@ -108,6 +138,9 @@ export interface StudyImageSet {
 export interface StudyImageSetImageMapping {
   id: number;
   created_datetime_utc: string;
+  modified_datetime_utc: string;
+  created_by_user_id: string;
+  modified_by_user_id: string;
   study_image_set_id: number;
   image_id: string;
   images?: Image;

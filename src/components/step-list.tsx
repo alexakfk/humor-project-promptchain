@@ -37,6 +37,7 @@ interface StepListProps {
   inputTypes: LlmInputType[];
   outputTypes: LlmOutputType[];
   onRefresh: () => void;
+  userId: string;
 }
 
 export function StepList({
@@ -47,6 +48,7 @@ export function StepList({
   inputTypes,
   outputTypes,
   onRefresh,
+  userId,
 }: StepListProps) {
   const supabase = createClient();
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -82,6 +84,7 @@ export function StepList({
       llm_output_type_id: step.llm_output_type_id,
       llm_model_id: step.llm_model_id,
       humor_flavor_step_type_id: step.humor_flavor_step_type_id,
+      modified_by_user_id: userId,
     }));
 
     const { error } = await supabase.from("humor_flavor_steps").upsert(updates);
@@ -101,6 +104,8 @@ export function StepList({
       humor_flavor_id: humorFlavorId,
       order_by: nextOrder,
       ...data,
+      created_by_user_id: userId,
+      modified_by_user_id: userId,
     });
 
     if (error) {
@@ -118,7 +123,7 @@ export function StepList({
 
     const { error } = await supabase
       .from("humor_flavor_steps")
-      .update(data)
+      .update({ ...data, modified_by_user_id: userId })
       .eq("id", editingStep.id);
 
     if (error) {
@@ -158,6 +163,7 @@ export function StepList({
         llm_output_type_id: step.llm_output_type_id,
         llm_model_id: step.llm_model_id,
         humor_flavor_step_type_id: step.humor_flavor_step_type_id,
+        modified_by_user_id: userId,
       }));
       await supabase.from("humor_flavor_steps").upsert(renumber);
     }

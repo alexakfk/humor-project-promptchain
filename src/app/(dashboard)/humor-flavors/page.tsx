@@ -30,6 +30,13 @@ export default function HumorFlavorsPage() {
   const [creating, setCreating] = useState(false);
   const [newSlug, setNewSlug] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, [supabase]);
 
   const fetchFlavors = useCallback(async () => {
     const { data, error } = await supabase
@@ -65,7 +72,12 @@ export default function HumorFlavorsPage() {
 
     const { error } = await supabase
       .from("humor_flavors")
-      .insert({ slug: newSlug.trim(), description: newDescription.trim() || null });
+      .insert({
+        slug: newSlug.trim(),
+        description: newDescription.trim() || null,
+        created_by_user_id: userId!,
+        modified_by_user_id: userId!,
+      });
 
     if (error) {
       toast.error("Failed to create humor flavor", { description: error.message });
