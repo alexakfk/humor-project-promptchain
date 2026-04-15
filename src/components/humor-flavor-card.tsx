@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -21,9 +21,10 @@ import type { HumorFlavor } from "@/lib/types";
 interface HumorFlavorCardProps {
   flavor: HumorFlavor & { step_count: number };
   onDelete: (id: number) => void;
+  onDuplicate: (flavor: HumorFlavor & { step_count: number }) => void;
 }
 
-export function HumorFlavorCard({ flavor, onDelete }: HumorFlavorCardProps) {
+export function HumorFlavorCard({ flavor, onDelete, onDuplicate }: HumorFlavorCardProps) {
   return (
     <Card className="group relative transition-shadow hover:shadow-md">
       <CardHeader>
@@ -47,6 +48,10 @@ export function HumorFlavorCard({ flavor, onDelete }: HumorFlavorCardProps) {
               <DropdownMenuItem render={<Link href={`/humor-flavors/${flavor.id}`} />}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDuplicate(flavor)}>
+                <Copy className="mr-2 h-4 w-4" />
+                Duplicate
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-destructive"

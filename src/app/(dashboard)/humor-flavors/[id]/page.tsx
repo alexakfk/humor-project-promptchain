@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Copy,
   Loader2,
   Save,
   Play,
@@ -17,6 +18,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -30,6 +39,10 @@ import { StepList } from "@/components/step-list";
 import { ImagePicker } from "@/components/image-picker";
 import { CaptionResults } from "@/components/caption-results";
 import { createClient } from "@/lib/supabase/client";
+import {
+  duplicateHumorFlavor,
+  suggestDuplicateSlug,
+} from "@/lib/duplicate-humor-flavor";
 import {
   uploadAndGenerateCaptions,
   generateCaptionsForExistingImage,
@@ -72,6 +85,10 @@ export default function HumorFlavorDetailPage({
   const [testResults, setTestResults] = useState<Caption[]>([]);
   const [testing, setTesting] = useState(false);
   const [testProgress, setTestProgress] = useState("");
+
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicateSlug, setDuplicateSlug] = useState("");
+  const [duplicating, setDuplicating] = useState(false);
 
   const fetchFlavor = useCallback(async () => {
     const { data, error } = await supabase
@@ -193,6 +210,38 @@ export default function HumorFlavorDetailPage({
     router.push("/humor-flavors");
   }
 
+  async function openDuplicateDialog() {
+    if (!flavor) return;
+    const { data } = await supabase.from("humor_flavors").select("slug");
+    const slugs = (data ?? []).map((r) => r.slug);
+    setDuplicateSlug(suggestDuplicateSlug(flavor.slug, slugs));
+    setDuplicateDialogOpen(true);
+  }
+
+  async function handleDuplicateFlavor(e: React.FormEvent) {
+    e.preventDefault();
+    if (!flavor || !userId) return;
+
+    setDuplicating(true);
+    const result = await duplicateHumorFlavor(supabase, {
+      sourceFlavorId: flavor.id,
+      newSlug: duplicateSlug,
+      userId,
+    });
+    setDuplicating(false);
+
+    if ("error" in result) {
+      toast.error("Failed to duplicate humor flavor", {
+        description: result.error,
+      });
+      return;
+    }
+
+    toast.success("Humor flavor duplicated");
+    setDuplicateDialogOpen(false);
+    router.push(`/humor-flavors/${result.newFlavorId}`);
+  }
+
   async function handleTest() {
     if (!testFile && !testExistingImageId) {
       toast.error("Select or upload an image first");
@@ -254,19 +303,69 @@ export default function HumorFlavorDetailPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Link href="/humor-flavors">
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{flavor.slug}</h1>
           <p className="text-sm text-muted-foreground">
             {flavor.description || "No description"}
           </p>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="ml-auto shrink-0"
+          onClick={() => void openDuplicateDialog()}
+        >
+          <Copy className="mr-2 h-4 w-4" />
+          Duplicate
+        </Button>
       </div>
+
+      <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
+        <DialogContent>
+          <form onSubmit={handleDuplicateFlavor}>
+            <DialogHeader>
+              <DialogTitle>Duplicate humor flavor</DialogTitle>
+              <DialogDescription>
+                Copy “{flavor.slug}” and all of its steps. Choose a new slug (name)
+                that is not already in use.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="detail-duplicate-slug">New slug</Label>
+                <Input
+                  id="detail-duplicate-slug"
+                  placeholder="dry-wit-copy"
+                  value={duplicateSlug}
+                  onChange={(e) => setDuplicateSlug(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDuplicateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={duplicating || !userId}>
+                {duplicating && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Duplicate
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,12 +18,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { HumorFlavorCard } from "@/components/humor-flavor-card";
+import {
+  duplicateHumorFlavor,
+  suggestDuplicateSlug,
+} from "@/lib/duplicate-humor-flavor";
 import { createClient } from "@/lib/supabase/client";
 import type { HumorFlavor } from "@/lib/types";
 
 type FlavorWithCount = HumorFlavor & { step_count: number };
 
 export default function HumorFlavorsPage() {
+  const router = useRouter();
   const supabase = createClient();
   const [flavors, setFlavors] = useState<FlavorWithCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +37,12 @@ export default function HumorFlavorsPage() {
   const [newSlug, setNewSlug] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicateSource, setDuplicateSource] = useState<FlavorWithCount | null>(
+    null
+  );
+  const [duplicateSlug, setDuplicateSlug] = useState("");
+  const [duplicating, setDuplicating] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -126,6 +138,43 @@ export default function HumorFlavorsPage() {
     fetchFlavors();
   }
 
+  function openDuplicateDialog(flavor: FlavorWithCount) {
+    setDuplicateSource(flavor);
+    setDuplicateSlug(
+      suggestDuplicateSlug(
+        flavor.slug,
+        flavors.map((f) => f.slug)
+      )
+    );
+    setDuplicateDialogOpen(true);
+  }
+
+  async function handleDuplicate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!duplicateSource || !userId) return;
+
+    setDuplicating(true);
+    const result = await duplicateHumorFlavor(supabase, {
+      sourceFlavorId: duplicateSource.id,
+      newSlug: duplicateSlug,
+      userId,
+    });
+    setDuplicating(false);
+
+    if ("error" in result) {
+      toast.error("Failed to duplicate humor flavor", {
+        description: result.error,
+      });
+      return;
+    }
+
+    toast.success("Humor flavor duplicated");
+    setDuplicateDialogOpen(false);
+    setDuplicateSource(null);
+    fetchFlavors();
+    router.push(`/humor-flavors/${result.newFlavorId}`);
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -204,10 +253,53 @@ export default function HumorFlavorsPage() {
               key={flavor.id}
               flavor={flavor}
               onDelete={handleDelete}
+              onDuplicate={openDuplicateDialog}
             />
           ))}
         </div>
       )}
+
+      <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
+        <DialogContent>
+          <form onSubmit={handleDuplicate}>
+            <DialogHeader>
+              <DialogTitle>Duplicate humor flavor</DialogTitle>
+              <DialogDescription>
+                {duplicateSource
+                  ? `Copy “${duplicateSource.slug}” and all of its steps. Choose a new slug (name) that is not already in use.`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="duplicate-slug">New slug</Label>
+                <Input
+                  id="duplicate-slug"
+                  placeholder="dry-wit-copy"
+                  value={duplicateSlug}
+                  onChange={(e) => setDuplicateSlug(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDuplicateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={duplicating || !userId}>
+                {duplicating && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Duplicate
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
