@@ -78,7 +78,11 @@ export default function HumorFlavorsPage() {
   }, [supabase]);
 
   useEffect(() => {
-    fetchFlavors();
+    // Defer initial fetch to avoid synchronous state updates in effect.
+    const timer = window.setTimeout(() => {
+      void fetchFlavors();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchFlavors]);
 
   async function handleCreate(e: React.FormEvent) {

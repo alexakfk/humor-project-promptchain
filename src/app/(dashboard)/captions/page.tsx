@@ -69,7 +69,11 @@ export default function CaptionsPage() {
   }, [supabase, selectedFlavor]);
 
   useEffect(() => {
-    fetchCaptions();
+    // Defer initial fetch to avoid synchronous state updates in effect.
+    const timer = window.setTimeout(() => {
+      void fetchCaptions();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [fetchCaptions]);
 
   return (

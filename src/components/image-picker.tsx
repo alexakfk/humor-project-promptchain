@@ -81,11 +81,20 @@ export function ImagePicker({
   }, [supabase]);
 
   useEffect(() => {
+    let timer: number | undefined;
     if (mode === "set" && selectedSetId) {
-      fetchSetImages(selectedSetId);
+      // Defer fetch to satisfy hook lint rule in React 19 toolchain.
+      timer = window.setTimeout(() => {
+        void fetchSetImages(selectedSetId);
+      }, 0);
     } else if (mode === "individual") {
-      fetchAllImages();
+      timer = window.setTimeout(() => {
+        void fetchAllImages();
+      }, 0);
     }
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
   }, [mode, selectedSetId, fetchSetImages, fetchAllImages]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
